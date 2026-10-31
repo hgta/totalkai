@@ -1,0 +1,65 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 代码检查
+        run: npm run lint
+
+      - name: 类型检查
+        run: npm run typecheck
+
+      - name: 单元测试
+        run: npm test
+
+      - name: 构建
+        run: npm run build
+
+      - name: 打包 standalone 产物
+        run: |
+          set -euo pipefail
+          rm -rf dist release.tar.gz
+          mkdir -p dist
+          cp -r .next/standalone/. dist/
+          mkdir -p dist/.next
+          cp -r .next/static dist/.next/static
+          if [ -d public ]; then cp -r public dist/public; fi
+          tar -czf release.tar.gz -C dist .
+
+      - name: 传输产物与部署脚本
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.LINODE_HOST }}
+          username: ${{ secrets.LINODE_USER }}
+          key: ${{ secrets.LINODE_SSH_KEY }}
+          source: 'release.tar.gz,scripts/deploy.sh'
+          target: /var/www/totalkai/incoming
+
+      - name: 执行部署
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.LINODE_HOST }}
+          username: ${{ secrets.LINODE_USER }}
+          key: ${{ secrets.LINODE_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            mkdir -p /var/www/totalkai/scripts
+            cp /var/www/totalkai/incoming/scripts/deploy.sh /var/www/totalkai/scripts/deploy.sh
+            chmod +x /var/www/totalkai/scripts/deploy.sh
+            bash /var/www/totalkai/scripts/deploy.sh
