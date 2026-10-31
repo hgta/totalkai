@@ -64,11 +64,13 @@
 
 备选：服务器上 `git pull && npm ci && npm run build`——链路短但风险高，排除。
 
-### D6. 反向代理：Caddy（自动 HTTPS）
+### D6. 反向代理：Nginx（证书由宝塔面板管理）
 
-Caddyfile 数行配置即可获得自动签发与续期证书。
+同一台 Linode 实例除 totalk.ai 外还需托管其他站点与数据库，因此统一采用宝塔面板管理 Nginx 站点与 Let's Encrypt 证书，本应用作为一个纯反向代理站点接入。
 
-备选：Nginx + certbot——能力等价但配置量与续期维护成本明显更高。
+理由：Caddy 与宝塔的 Nginx 会争抢 80/443 端口，两者只能存其一；多站点共用同一面板的运维成本显著低于混合两套代理。
+
+备选：Caddy 自动 HTTPS——配置最简，但与宝塔 Nginx 端口冲突，排除。
 
 ### D7. 进程守护：pm2 + 开机自启
 
@@ -90,7 +92,7 @@ Caddyfile 数行配置即可获得自动签发与续期证书。
 
 ### D10. 健康检查端点 `/api/health`
 
-返回应用存活状态与数据库可连接性，供 Caddy 上游检查与部署后验证使用。
+返回应用存活状态与数据库可连接性，供 Nginx 上游检查与部署后验证使用。
 
 ## Risks / Trade-offs
 
@@ -107,13 +109,13 @@ Caddyfile 数行配置即可获得自动签发与续期证书。
 
 首次部署（无历史数据，无破坏性变更）：
 
-1. 在 Linode 安装 Node 20+、pm2、Caddy
+1. 在 Linode 安装 Node 20+、pm2、宝塔面板（内含 Nginx）
 2. 配置 `totalk.ai` DNS 指向实例 IP
 3. 创建 `/var/www/totalkai/releases`、`/var/www/totalkai/data` 目录
 4. 本地/CI 执行 `next build`，打包 standalone 产物与 `public/`
 5. 执行 `scripts/deploy.sh` 传输并解压到新版本目录
 6. 运行数据库迁移，软链接切到新版本，`pm2 restart`
-7. 访问 `/api/health` 与首页验证，Caddy 自动签发证书
+7. 访问 `/api/health` 与首页验证，通过宝塔申请 Let's Encrypt 证书
 
 回滚：将 `current` 软链接指回上一版本目录 → `pm2 restart totalkai` → 健康检查。
 

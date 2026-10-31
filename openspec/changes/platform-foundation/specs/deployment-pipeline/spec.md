@@ -55,14 +55,19 @@
 - **WHEN** 应用进程异常退出
 - **THEN** pm2 自动重启该进程
 
-### Requirement: Caddy 提供 HTTPS 与反向代理
+### Requirement: Nginx 提供 HTTPS 与反向代理
 
-系统 SHALL 通过 Caddy 对外提供 HTTPS，将请求反向代理到应用端口，并将 HTTP 请求跳转到 HTTPS。
+系统 SHALL 通过 Nginx 对外提供 HTTPS，将请求反向代理到应用监听的 `127.0.0.1:3000`，并将 HTTP 请求跳转到 HTTPS。Nginx 与证书由宝塔面板管理，以便同一实例托管多个站点与数据库。
 
 #### Scenario: 通过 HTTP 访问站点
 
 - **WHEN** 访客以 http:// 访问站点
 - **THEN** 请求被跳转到 https:// 并返回站点内容
+
+#### Scenario: 应用端口不对外暴露
+
+- **WHEN** 从公网直接访问 3000 端口
+- **THEN** 连接被防火墙拒绝，仅本机 Nginx 可访问该端口
 
 ### Requirement: 健康检查端点反映应用与数据库状态
 

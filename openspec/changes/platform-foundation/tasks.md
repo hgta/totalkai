@@ -30,7 +30,7 @@
 ## 5. 部署链路
 
 - [x] 5.1 配置 `next.config` 输出 standalone 产物
-- [x] 5.2 编写 Caddyfile（自动 HTTPS + 反向代理）
+- [x] 5.2 编写 Nginx 反向代理配置（证书由宝塔面板签发与管理）
 - [x] 5.3 编写 pm2 `ecosystem.config.cjs` 与开机自启说明
 - [x] 5.4 编写 `scripts/deploy.sh`（传输 → 新版本目录 → 迁移 → 切软链接 → 重启 → 健康检查 → 失败自动回滚）
 - [x] 5.5 编写数据库定时备份脚本

@@ -58,9 +58,8 @@ totalkai/
 │  ├─ content-status.ts       状态枚举 + 合法流转
 │  ├─ queries.ts              publishedOnly()
 │  └─ admin-session.ts        Cookie 签发与校验
-├─ scripts/{deploy.sh,backup-db.sh}
+├─ scripts/{deploy.sh,backup-db.sh,nginx-reverse-proxy.conf}
 ├─ ecosystem.config.cjs       pm2 fork 单实例
-├─ Caddyfile
 ├─ .github/workflows/{ci.yml,deploy.yml}
 └─ DEPLOYMENT.md
 ```
@@ -131,7 +130,7 @@ checkout → Node 20 → npm ci → lint + typecheck → next build
 
 ### 运行时
 
-- Caddy：自动 HTTPS + 反代到应用端口，HTTP 跳转 HTTPS
+- 宝塔 Nginx：反代到 `127.0.0.1:3000`，Let's Encrypt 证书由宝塔签发与自动续期，HTTP 跳转 HTTPS
 - pm2：2GB 机器使用 fork 单实例，不启用 cluster
 - 备份：每日备份数据库到服务器本地目录，滚动保留 7 天
 
@@ -147,7 +146,7 @@ checkout → Node 20 → npm ci → lint + typecheck → next build
 - **单元测试**：状态机流转合法性、`publishedOnly()` 过滤行为、环境变量校验、Cookie 签名与校验
 - **部署冒烟**：`/api/health` 校验应用与数据库连通、首页返回 200、`/admin` 未登录跳转、登录后返回 200
 - **回滚演练**：验证阶段实际执行一次回滚，确认软链接切换与 pm2 重启生效
-- **HTTPS 验证**：确认 Caddy 自动签发证书且 HTTP 跳转 HTTPS
+- **HTTPS 验证**：确认证书已在宝塔 SSL 面板签发，且 HTTP 跳转 HTTPS
 
 ## Risks / Trade-offs
 

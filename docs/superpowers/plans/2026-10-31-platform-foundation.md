@@ -4,9 +4,9 @@
 
 **Goal:** 为 totalk.ai 建立可上线、可重复发布的 Next.js 站点地基——应用骨架、内容数据层基线（含发布状态机）、以及 CI → Linode 的部署与回滚链路。
 
-**Architecture:** 单体 Next.js 15 App Router 应用，SQLite + Drizzle 作为数据层，公共基表 `content_items` + 类型扩展表支撑跨类型查询。构建在 CI 完成，服务器只运行 standalone 产物；pm2 守护进程，Caddy 提供 HTTPS 与反代；发布采用「版本目录 + current 软链接」实现秒级回滚。
+**Architecture:** 单体 Next.js 15 App Router 应用，SQLite + Drizzle 作为数据层，公共基表 `content_items` + 类型扩展表支撑跨类型查询。构建在 CI 完成，服务器只运行 standalone 产物；pm2 守护进程，宝塔面板管理的 Nginx 提供 HTTPS 与反代（因同机需托管多站点与数据库，避免与宝塔 Nginx 争抢 80/443）；发布采用「版本目录 + current 软链接」实现秒级回滚。
 
-**Tech Stack:** Next.js 15 / React 19 / TypeScript strict / Tailwind CSS 3.4 / Drizzle ORM + better-sqlite3 / Zod / Vitest / pm2 / Caddy / GitHub Actions
+**Tech Stack:** Next.js 15 / React 19 / TypeScript strict / Tailwind CSS 3.4 / Drizzle ORM + better-sqlite3 / Zod / Vitest / pm2 / 宝塔面板(Nginx) / GitHub Actions
 
 ---
 
@@ -53,7 +53,7 @@
 | `components/site-header.tsx` | 主导航 + 移动端菜单 |
 | `components/site-footer.tsx` | 页脚 |
 | `components/empty-state.tsx` | 通用空态 |
-| `Caddyfile` | HTTPS + 反代 |
+| `scripts/nginx-reverse-proxy.conf` | Nginx 反代配置（证书由宝塔签发） |
 | `ecosystem.config.cjs` | pm2 fork 单实例 |
 | `scripts/deploy.sh` | 版本目录 + 软链接 + 健康检查 + 回滚 |
 | `scripts/backup-db.sh` | 数据库备份与 7 天滚动清理 |
@@ -823,19 +823,16 @@ git commit -m "feat: 增加管理后台口令登录与签名会话守卫"
 ## Task 10: 部署资产
 
 **Files:**
-- Create: `Caddyfile`, `ecosystem.config.cjs`, `scripts/deploy.sh`, `scripts/backup-db.sh`, `.github/workflows/ci.yml`, `.github/workflows/deploy.yml`, `DEPLOYMENT.md`
+- Create: `scripts/nginx-reverse-proxy.conf`, `ecosystem.config.cjs`, `scripts/deploy.sh`, `scripts/backup-db.sh`, `.github/workflows/ci.yml`, `.github/workflows/deploy.yml`, `DEPLOYMENT.md`
 
 **Interfaces:**
 - Consumes: `/api/health`（Task 8）、standalone 产物（Task 1 的 `output: 'standalone'`）
 
-- [ ] **Step 1: 写 Caddyfile**
+- [ ] **Step 1: 写 Nginx 反向代理配置**
 
-```caddyfile
-totalk.ai {
-	encode gzip
-	reverse_proxy 127.0.0.1:3000
-}
-```
+`scripts/nginx-reverse-proxy.conf`：反代到 `127.0.0.1:3000`，并传递
+`Host` / `X-Real-IP` / `X-Forwarded-*` 头。其中 `X-Forwarded-Proto $scheme` 是必须的——
+缺失会导致 Next.js 误判请求为 http，生成的链接和登录跳转都会出错。
 
 - [ ] **Step 2: 写 pm2 配置**
 
@@ -870,13 +867,13 @@ module.exports = {
 
 - [ ] **Step 6: 写运维文档**
 
-`DEPLOYMENT.md` 说明：服务器前置条件（Node 20+、pm2、Caddy）、目录结构、首次部署步骤、回滚步骤、备份与恢复、以及 systemd unit 的备选方案。
+`DEPLOYMENT.md` 说明：服务器前置条件（Node 20+、pm2、宝塔面板）、目录结构、首次部署步骤、回滚步骤、备份与恢复、宝塔相关注意事项、以及 systemd unit 的备选方案。
 
 - [ ] **Step 7: 提交**
 
 ```bash
-git add Caddyfile ecosystem.config.cjs scripts .github DEPLOYMENT.md
-git commit -m "feat: 建立 Caddy/pm2/部署脚本与 CI 发布链路"
+git add scripts ecosystem.config.cjs .github DEPLOYMENT.md
+git commit -m "feat: 建立 Nginx/pm2/部署脚本与 CI 发布链路"
 ```
 
 ---
