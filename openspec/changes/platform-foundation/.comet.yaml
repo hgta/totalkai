@@ -9,9 +9,9 @@ review_mode: standard
 isolation: branch
 verify_mode: null
 auto_transition: true
-base_ref: null
+base_ref: ffae64cdebad14c9a0f82722a0b4296f8244ccf4
 design_doc: docs/superpowers/specs/2026-10-31-totalkai-platform-foundation-design.md
-plan: null
+plan: docs/superpowers/plans/2026-10-31-platform-foundation.md
 verify_result: pending
 verification_report: null
 branch_status: pending

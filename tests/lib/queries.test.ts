@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { contentItems } from '@/lib/db/schema'
+import * as schema from '@/lib/db/schema'
 import { getPublishedBySlug, listPublishedContent } from '@/lib/queries'
 
 const CREATE_TABLE = `
@@ -20,7 +20,7 @@ const CREATE_TABLE = `
 function freshDb() {
   const sqlite = new Database(':memory:')
   sqlite.exec(CREATE_TABLE)
-  return drizzle(sqlite, { schema: { contentItems } })
+  return drizzle(sqlite, { schema })
 }
 
 describe('前台查询', () => {
@@ -28,7 +28,7 @@ describe('前台查询', () => {
 
   beforeEach(() => {
     db = freshDb()
-    db.insert(contentItems)
+    db.insert(schema.contentItems)
       .values([
         { id: '1', type: 'wiki', slug: 'pub-1', title: '已发布', status: 'published', createdAt: 1, updatedAt: 1, publishedAt: 1 },
         { id: '2', type: 'wiki', slug: 'draft-1', title: '草稿', status: 'draft', createdAt: 1, updatedAt: 1, publishedAt: null },

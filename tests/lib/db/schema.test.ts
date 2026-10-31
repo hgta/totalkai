@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { contentItems } from '@/lib/db/schema'
+import * as schema from '@/lib/db/schema'
 
 const CREATE_TABLE = `
   CREATE TABLE content_items (
@@ -21,7 +21,7 @@ const CREATE_TABLE = `
 function freshDb() {
   const sqlite = new Database(':memory:')
   sqlite.exec(CREATE_TABLE)
-  return drizzle(sqlite, { schema: { contentItems } })
+  return drizzle(sqlite, { schema })
 }
 
 const row = {
@@ -43,19 +43,19 @@ describe('content_items', () => {
   })
 
   it('可插入一条记录', () => {
-    db.insert(contentItems).values(row).run()
-    expect(db.select().from(contentItems).all()).toHaveLength(1)
+    db.insert(schema.contentItems).values(row).run()
+    expect(db.select().from(schema.contentItems).all()).toHaveLength(1)
   })
 
   it('重复 slug 触发唯一约束冲突', () => {
-    db.insert(contentItems).values(row).run()
+    db.insert(schema.contentItems).values(row).run()
     expect(() =>
-      db.insert(contentItems).values({ ...row, id: 'c2' }).run(),
+      db.insert(schema.contentItems).values({ ...row, id: 'c2' }).run(),
     ).toThrow()
   })
 
   it('status 缺省为 draft', () => {
-    db.insert(contentItems).values({ ...row, status: undefined }).run()
-    expect(db.select().from(contentItems).all()[0].status).toBe('draft')
+    db.insert(schema.contentItems).values({ ...row, status: undefined }).run()
+    expect(db.select().from(schema.contentItems).all()[0].status).toBe('draft')
   })
 })
