@@ -1,0 +1,16 @@
+{
+  "change": "platform-foundation",
+  "phase": "design",
+  "mode": "compact",
+  "canonical_spec": "openspec",
+  "generated_by": "comet-handoff.sh",
+  "context_hash": "2e21a97ab31244cb81f6be199cfa45b1367ff908f6244a38622a6917bd64ed78",
+  "files": [
+    { "path": "openspec/changes/platform-foundation/proposal.md", "sha256": "ffdc5cf8840838308139bb6eb5bd59fecca66ac5c2cd1905eab9bb8433b1c858" },
+    { "path": "openspec/changes/platform-foundation/design.md", "sha256": "3451334ce2481c96bc661ffca882785fc6a028309cc846a9cd298a0e1a49cb0b" },
+    { "path": "openspec/changes/platform-foundation/tasks.md", "sha256": "169bd79b3e371f4e0d528f26223dad32aaa53bd370268f5febf2c1254717b906" },
+    { "path": "openspec/changes/platform-foundation/specs/content-repository/spec.md", "sha256": "02bc50b0ca8dc56c2d25129fae2765435e414ebb364e83dbde4068baba4f804b" },
+    { "path": "openspec/changes/platform-foundation/specs/deployment-pipeline/spec.md", "sha256": "ff7735962d2f334beda43cd9ab27dc2849e7dee980bd021c7ee5ab241ac23d82" },
+    { "path": "openspec/changes/platform-foundation/specs/site-shell/spec.md", "sha256": "97382c187862c98ea86226fc70b3760405cd4093ab325a25b337befb235c825b" }
+  ]
+}
