@@ -1,12 +1,12 @@
 # totalk.ai 部署与运维
 
-目标环境：Linode 2GB 实例，Ubuntu。**Nginx 与 HTTPS 证书统一由宝塔面板管理**，
+目标环境：Linode 2GB 实例，**Rocky Linux 9**。**Nginx 与 HTTPS 证书统一由宝塔面板管理**，
 以便同一台机器托管其他站点与数据库。应用以 standalone 产物运行，pm2 守护。
 
 **构建不在服务器上执行**——构建只发生在 GitHub Actions 或本地，服务器只运行产物。
 
-> **关于 Ubuntu 版本**：宝塔面板对 Ubuntu 的支持相对保守，建议选 **Ubuntu 22.04 LTS**。
-> 若已装 24.04 且宝塔安装脚本报错，请改用 22.04 镜像重建（有此需求时另行确认）。
+> **为什么选 Rocky 9 而不是 Ubuntu**：宝塔起家于 CentOS 系，对 RHEL 系（Rocky/Alma）的支持最成熟；
+> 且 Rocky 9 支持到 2032 年。代价是 RHEL 系自带的 SELinux 与 firewalld 需要各多执行一条命令（见下文）。
 
 ## 架构与端口
 
@@ -50,22 +50,26 @@ SQLite  /var/www/totalkai/data/totalkai.db
 ### ① 装 Node 20
 
 ```bash
-curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-apt-get install -y nodejs
+curl -fsSL https://rpm.nodesource.com/setup_20.x | bash -
+dnf install -y nodejs
 node -v        # v20.x
 ```
 
-### ② 装 pm2 与 sqlite3
+### ② 装 pm2 与 sqlite
 
 ```bash
 npm install -g pm2
-apt-get install -y sqlite3
+dnf install -y sqlite
 ```
+
+> **注意**：RHEL 系的软件包名是 `sqlite`（装出来的是 `sqlite3` 命令），不是 `sqlite3`。
 
 ### ③ 装宝塔面板
 
 ```bash
-wget -O install.sh https://download.bt.cn/install/install-ubuntu_6.0.sh && bash install.sh ed8484bec
+url=https://download.bt.cn/install/install_lts.sh
+if [ -f /usr/bin/curl ]; then curl -sSL $url -o install.sh; else wget -O install.sh $url; fi
+bash install.sh ed8484bec
 ```
 
 装完会打印**面板地址、用户名、密码**，务必保存。首次登录后在「软件商店」里安装 **Nginx**。
@@ -73,9 +77,27 @@ wget -O install.sh https://download.bt.cn/install/install-ubuntu_6.0.sh && bash 
 > **重要**：宝塔自带 Nginx 会占用 80/443，**不要**再安装 Caddy，两者端口冲突。
 > 本仓库已移除 `Caddyfile`。
 
-### ④ 防火墙端口
+### ④ 防火墙端口（两层）
 
-在 Linode 云防火墙放行：`22`（SSH）、`80`（HTTP）、`443`（HTTPS）。
+**Linode 云防火墙**放行：`22`（SSH）、`80`（HTTP）、`443`（HTTPS）。
+
+**系统内 firewalld**（Rocky 9 默认只放行 SSH，必须手动加）：
+
+```bash
+firewall-cmd --permanent --add-service=http
+firewall-cmd --permanent --add-service=https
+firewall-cmd --reload
+firewall-cmd --list-all     # 确认输出里有 http https
+```
+
+### ⑤ SELinux 放行反向代理（Rocky 特有，必做）
+
+```bash
+getenforce                  # 确认是 Enforcing
+setsebool -P httpd_can_network_connect 1
+```
+
+不做这一步的典型症状：Nginx 正常启动、证书也签好了，但页面 502。
 
 宝塔面板自身的端口（默认 `8888`）**建议只在云防火墙里对你的 IP 放行**，
 不要对全网开放——面板是常见的攻击入口。
@@ -233,7 +255,7 @@ Type=simple
 User=root
 WorkingDirectory=/var/www/totalkai/current
 EnvironmentFile=/var/www/totalkai/data/.env
-ExecStart=/usr/local/bin/node server.js
+ExecStart=/usr/bin/node server.js
 Restart=always
 RestartSec=5
 
